@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% load tz %}
+{% block title %}Orders | Residence256 Hotel{% endblock %}
+{% block extra_head %}
+<style>
+    body {
+        background-color: #f4f4f9;
+        font-family: 'Arial', sans-serif;
+    }
+    .full-height {
+        min-height: calc(100vh - 120px);
+    }
+    .card {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+    }
+    .order-table th, .order-table td {
+        font-size: 0.9rem;
+        padding: 10px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .table-container {
+        max-height: 500px;
+        overflow-y: auto;
+    }
+    .status-pending { color: #ffc107; font-weight: bold; }
+    .status-started { color: #007bff; font-weight: bold; }
+    .status-ready { color: #28a745; font-weight: bold; }
+    .status-canceled { color: #dc3545; font-weight: bold; }
+    .form-label { font-weight: 500; }
+    .alert-container { margin-bottom: 15px; }
+    @media print {
+        .no-print { display: none !important; }
+        .card { border: none; box-shadow: none; }
+        .table-container { max-height: none; overflow-y: visible; }
+        .order-history-container { display: block !important; }
+        .active-orders-container { display: none !important; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% timezone "Africa/Nairobi" %}
+<div class="container-fluid full-height my-3">
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert-container">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Active Orders -->
+    <div class="card mb-4 active-orders-container">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Active Orders</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table class="table table-bordered order-table">
+                    <thead>
+                        <tr>
+                            <th>Order Number</th>
+                            <th>Customer</th>
+                            <th>Table</th>
+                            <th>Status</th>
+                            <th>Items</th>
+                            <th>Total Price (UGX)</th>
+                            <th>Timestamp</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in prevailing_orders %}
+                        <tr>
+                            <td>{{ order.order_number }}</td>
+                            <td>{{ order.customer|default:'-' }}</td>
+                            <td>{{ order.table.name|default:'-' }}</td>
+                            <td class="status-{% if order.status == 'Pending' %}pending{% elif order.status == 'Started' %}started{% elif order.status == 'Ready' %}ready{% else %}canceled{% endif %}">
+                                {{ order.status }}
+                            </td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for item in order.items.all %}
+                                    <li>{{ item.quantity }} × {{ item.menu_item.name }} (UGX {{ item.total_price|floatformat:2|intcomma }})</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>{{ order.total_price|floatformat:2|intcomma }}</td>
+                            <td>{{ order.timestamp|date:'Y-m-d H:i A' }}</td>
+                            <td>
+                                <form method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="order_id" value="{{ order.id }}">
+                                    {% if order.status == 'Pending' %}
+                                    <button type="submit" name="action" value="start" class="btn btn-sm btn-primary">Start</button>
+                                    <button type="submit" name="action" value="cancel" class="btn btn-sm btn-danger">Cancel</button>
+                                    {% elif order.status == 'Started' %}
+                                    <button type="submit" name="action" value="ready" class="btn btn-sm btn-success">Ready</button>
+                                    <button type="submit" name="action" value="cancel" class="btn btn-sm btn-danger">Cancel</button>
+                                    {% endif %}
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="8">No active orders.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Order History -->
+    <div class="card order-history-container">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Order History</h5>
+        </div>
+        <div class="card-body">
+            <div class="mb-3 no-print">
+                <button onclick="window.print()" class="btn btn-success mb-3">Print History</button>
+            </div>
+            <form class="mb-3 no-print">
+                <div class="row">
+                    <div class="col-md-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="period" class="form-label">Period</label>
+                        <select id="period" name="period" class="form-control">
+                            <option value="weekly" {% if period == 'weekly' %}selected{% endif %}>Weekly</option>
+                            <option value="monthly" {% if period == 'monthly' %}selected{% endif %}>Monthly</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    </div>
+                </div>
+            </form>
+            <div class="table-container">
+                <table class="table table-bordered order-table">
+                    <thead>
+                        <tr>
+                            <th>Order Number</th>
+                            <th>Customer</th>
+                            <th>Table</th>
+                            <th>Status</th>
+                            <th>Items</th>
+                            <th>Total Price (UGX)</th>
+                            <th>Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in history_orders %}
+                        <tr>
+                            <td>{{ order.order_number }}</td>
+                            <td>{{ order.customer|default:'-' }}</td>
+                            <td>{{ order.table.name|default:'-' }}</td>
+                            <td class="status-{% if order.status == 'Pending' %}pending{% elif order.status == 'Started' %}started{% elif order.status == 'Ready' %}ready{% else %}canceled{% endif %}">
+                                {{ order.status }}
+                            </td>
+                            <td>
+                                <ul class="list-unstyled mb-0">
+                                    {% for item in order.items.all %}
+                                    <li>{{ item.quantity }} × {{ item.menu_item.name }} (UGX {{ item.total_price|floatformat:2|intcomma }})</li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                            <td>{{ order.total_price|floatformat:2|intcomma }}</td>
+                            <td>{{ order.timestamp|date:'Y-m-d H:i A' }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="7">No orders found in history.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endtimezone %}
+{% endblock %}

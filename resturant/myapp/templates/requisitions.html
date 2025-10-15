@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Requisitions | Residence256 Hotel{% endblock %}
+{% block extra_head %}
+<style>
+    body {
+        background-color: #f4f4f9;
+        font-family: 'Arial', sans-serif;
+    }
+    .full-height {
+        min-height: calc(100vh - 120px);
+    }
+    .card {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+    }
+    .requisition-table th, .requisition-table td {
+        font-size: 0.9rem;
+        padding: 10px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .status-pending { color: #ffc107; font-weight: bold; }
+    .status-approved { color: #28a745; font-weight: bold; }
+    .status-rejected { color: #dc3545; font-weight: bold; }
+    .form-label { font-weight: 500; }
+    .grand-total { font-size: 1.1rem; font-weight: bold; margin-top: 1rem; }
+    #total-price-display { font-weight: bold; color: #007bff; }
+    @media print {
+        .no-print { display: none !important; }
+        .card { border: none; box-shadow: none; }
+        .table-container { max-height: none; overflow-y: visible; }
+    }
+</style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const quantityInput = document.getElementById('id_quantity');
+    const unitPriceInput = document.getElementById('id_unit_price');
+    const totalPriceDisplay = document.getElementById('total-price-display');
+
+    function updateTotalPrice() {
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const unitPrice = parseFloat(unitPriceInput.value) || 0;
+        const totalPrice = quantity * unitPrice;
+        totalPriceDisplay.textContent = `Total Price: UGX ${totalPrice.toFixed(2)}`;
+    }
+
+    quantityInput.addEventListener('input', updateTotalPrice);
+    unitPriceInput.addEventListener('input', updateTotalPrice);
+    updateTotalPrice(); // Initial calculation
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid full-height my-3">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Item Requisitions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 no-print">
+                        <button onclick="window.print()" class="btn btn-success mb-3">Print Requisition</button>
+                    </div>
+                    <h6 class="mb-3">Submit New Requisition</h6>
+                    <form method="post" id="requisition-form" class="no-print">
+                        {% csrf_token %}
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="id_item_name" class="form-label">Item Name</label>
+                                {{ form.item_name }}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="id_units" class="form-label">Units</label>
+                                {{ form.units }}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="id_quantity" class="form-label">Quantity</label>
+                                {{ form.quantity }}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="id_unit_price" class="form-label">Unit Price (UGX)</label>
+                                {{ form.unit_price }}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="id_reason" class="form-label">Reason for Purchase</label>
+                                {{ form.reason }}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="id_comments" class="form-label">Comments (Optional)</label>
+                                {{ form.comments }}
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-success w-100">Submit</button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <p id="total-price-display">Total Price: UGX 0.00</p>
+                        </div>
+                        {% if form.errors %}
+                        <div class="alert alert-danger">
+                            <ul>
+                                {% for field in form %}
+                                {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </form>
+
+                    <h6 class="mt-4 mb-3">Requisition History</h6>
+                    <form class="mb-3 no-print">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Filter</button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <div class="table-container">
+                        <table class="table table-bordered requisition-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>User</th>
+                                    <th>Item Name</th>
+                                    <th>Units</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price (UGX)</th>
+                                    <th>Total Price (UGX)</th>
+                                    <th>Reason</th>
+                                    <th>Comments</th>
+                                    <th>Admin Approval</th>
+                                    <th>Manager Approval</th>
+                                    <th>Director Approval</th>
+                                    <th>Created At</th>
+                                    {% if is_manager %}<th>Actions</th>{% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for requisition in requisitions %}
+                                <tr>
+                                    <td>{{ requisition.id }}</td>
+                                    <td>{{ requisition.user.username }}</td>
+                                    <td>{{ requisition.item_name }}</td>
+                                    <td>{{ requisition.units|default:'-' }}</td>
+                                    <td>{{ requisition.quantity|floatformat:2 }}</td>
+                                    <td>{{ requisition.unit_price|floatformat:2|intcomma }}</td>
+                                    <td>{{ requisition.total_price|floatformat:2|intcomma }}</td>
+                                    <td>{{ requisition.reason|default:'-' }}</td>
+                                    <td>{{ requisition.comments|default:'-' }}</td>
+                                    <td class="status-{% if requisition.admin_approval == 'Pending' %}pending{% elif requisition.admin_approval == 'Approved' %}approved{% else %}rejected{% endif %}">
+                                        {{ requisition.admin_approval }}
+                                    </td>
+                                    <td class="status-{% if requisition.manager_approval == 'Pending' %}pending{% elif requisition.manager_approval == 'Approved' %}approved{% else %}rejected{% endif %}">
+                                        {{ requisition.manager_approval }}
+                                    </td>
+                                    <td class="status-{% if requisition.director_approval == 'Pending' %}pending{% elif requisition.director_approval == 'Approved' %}approved{% else %}rejected{% endif %}">
+                                        {{ requisition.director_approval }}
+                                    </td>
+                                    <td>{{ requisition.created_at|date:'Y-m-d H:i A' }}</td>
+                                    {% if is_manager %}
+                                    <td>
+                                        {% if requisition.admin_approval == 'Pending' or requisition.manager_approval == 'Pending' or requisition.director_approval == 'Pending' %}
+                                        <form method="post" action="{% url 'requisition_action' requisition.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" class="btn btn-sm btn-success">Approve</button>
+                                        </form>
+                                        <form method="post" action="{% url 'requisition_action' requisition.id %}" class="d-inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="reject">
+                                            <button type="submit" class="btn btn-sm btn-danger">Reject</button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="{% if is_manager %}14{% else %}13{% endif %}">No requisitions found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="grand-total">
+                        Grand Total: UGX {{ grand_total|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

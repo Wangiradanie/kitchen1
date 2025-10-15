@@ -1,0 +1,10 @@
+Notes 
+1.Include breakfast and record breakfast expenses seperately because it is part of the cost of booking.com
+breakfast should 
+2.Inventory is key. It terms everything
+3.Replace admin approval with operations manager approval
+4.Replace manager with finance approval
+5.Cluster the requistion.Open each requisition number.
+6.Change the netprofit to gross profit.
+7.Memory of previous recipes to simply the chefs work.
+8.Chapter data in reports.

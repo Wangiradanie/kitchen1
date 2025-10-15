@@ -1,0 +1,16 @@
+ Feed back from Gonja staff 
+1.Correct the permission database issue.
+2.****Study groups more in admin panel.
+3.login details to monitor who logged in who did what
+4.Approval should only be by the manager.
+5.Try out the app.
+
+users.(Superuser)
+username: wangira
+password: 1234
+
+username: daniel
+password:DanWang11
+
+******Study groups more.****
+

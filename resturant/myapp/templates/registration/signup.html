@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Staff Account Request</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .signup-container {
+            background-image: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=600&q=80');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 30px 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            width: 320px;
+            box-sizing: border-box;
+            color: white;
+            position: relative;
+            z-index: 1;
+        }
+        .signup-container::before {
+            content: "";
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 12px;
+            z-index: -1;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #fff;
+            text-align: center;
+            font-weight: 600;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #eee;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="password"] {
+            padding: 10px;
+            margin-bottom: 18px;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            outline: none;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .error-message {
+            color: #f8d7da;
+            background-color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+        .login-link {
+            text-align: center;
+            margin-top: 15px;
+            color: #eee;
+        }
+        .login-link a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .login-link a:hover {
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="signup-container">
+        <h2>Staff Account Request</h2>
+        {% if form.errors %}
+            <div class="error-message">
+                {% if form.non_field_errors %}
+                    {{ form.non_field_errors.0 }}
+                {% else %}
+                    Please correct the errors below.
+                {% endif %}
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Request Account</button>
+        </form>
+        <div class="login-link">
+            <p>Already have an account? <a href="{% url 'account_login' %}">Log In</a></p>
+        </div>
+    </div>
+</body>
+</html>

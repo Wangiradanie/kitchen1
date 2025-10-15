@@ -1,0 +1,74 @@
+/* custom.css */
+.navbar {
+    background: linear-gradient(90deg, #2b68b8, #145cb9);
+}
+
+.navbar-brand {
+    font-size: 1.5rem;
+    transition: color 0.3s ease;
+}
+
+.navbar-brand:hover {
+    color: #f8f9fa !important;
+}
+
+.nav-link {
+    color: #ffffff !important;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.nav-link.active {
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: bold;
+}
+
+.nav-link.text-warning {
+    color: #ffc107 !important;
+}
+
+.nav-link.text-warning:hover {
+    background-color: rgba(255, 193, 7, 0.2);
+}
+
+.navbar-toggler {
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Responsive adjustments */
+@media (max-width: 991.98px) {
+    .navbar-nav {
+        padding: 1rem;
+        background-color: #1a50a1;
+        border-radius: 0.5rem;
+        margin-top: 0.5rem;
+    }
+    .nav-link {
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* Message alerts */
+.alert {
+    margin-top: 1rem;
+    border-radius: 0.5rem;
+}
+
+/* Footer */
+footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    z-index: 1000;
+}

@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% load humanize math_filters %}
+{% block title %}Inventory | Residence256 Hotel{% endblock %}
+{% block extra_head %}
+<style>
+    body {
+        background-color: #f4f4f9;
+        font-family: 'Arial', sans-serif;
+    }
+    .full-height {
+        min-height: calc(100vh - 120px);
+    }
+    .card {
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+    }
+    .inventory-table th, .inventory-table td {
+        font-size: 0.9rem;
+        padding: 10px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .table-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    .form-label {
+        font-weight: 500;
+    }
+    .grand-total {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-top: 1rem;
+        text-align: right;
+    }
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        .card {
+            border: none;
+            box-shadow: none;
+        }
+        .table-container {
+            max-height: none;
+            overflow-y: visible;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid full-height my-3">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Inventory Management</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4 no-print">
+                        <button onclick="window.print()" class="btn btn-success mb-3">Print Inventory</button>
+                    </div>
+
+                    <!-- Add/Update Item Form -->
+                    <h6 class="mb-3">Add/Update Inventory Item</h6>
+                    <form method="post" class="mb-4 no-print">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="id_name" class="form-label">Item Name</label>
+                                {{ form.name }}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="id_units" class="form-label">Units</label>
+                                {{ form.units }}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="id_quantity" class="form-label">Quantity</label>
+                                {{ form.quantity }}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="id_unit_price" class="form-label">Unit Price (UGX)</label>
+                                {{ form.unit_price }}
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" name="add-update" class="btn btn-success w-100">Add/Update</button>
+                            </div>
+                        </div>
+                        {% if form.errors %}
+                        <div class="alert alert-danger mt-3">
+                            <ul>
+                                {% for field in form %}
+                                {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </form>
+
+                    <!-- Use Item Form -->
+                    <h6 class="mb-3">Use Inventory Item</h6>
+                    <form method="post" class="mb-4 no-print">
+                        {% csrf_token %}
+                        <div class="row">
+                            <div class="col-md-3">
+                                <label for="id_item" class="form-label">Item</label>
+                                {{ use_form.item }}
+                            </div>
+                            <div class="col-md-2">
+                                <label for="id_quantity" class="form-label">Quantity to Use</label>
+                                {{ use_form.quantity }}
+                            </div>
+                            <div class="col-md-3">
+                                <label for="id_reason" class="form-label">Reason</label>
+                                {{ use_form.reason }}
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="submit" name="use-item" class="btn btn-warning w-100">Use Item</button>
+                            </div>
+                        </div>
+                        {% if use_form.errors %}
+                        <div class="alert alert-danger mt-3">
+                            <ul>
+                                {% for field in use_form %}
+                                {% for error in field.errors %}
+                                <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                                {% endfor %}
+                                {% for error in use_form.non_field_errors %}
+                                <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+                    </form>
+
+                    <!-- Inventory Table -->
+                    <h6 class="mt-4 mb-3">Inventory Items</h6>
+                    <div class="table-container">
+                        <table class="table table-bordered inventory-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Units</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Price (UGX)</th>
+                                    <th>Total Price (UGX)</th>
+                                    <th>Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                <tr>
+                                    <td>{{ item.name }}</td>
+                                    <td>{{ item.units }}</td>
+                                    <td>{{ item.quantity|floatformat:2|intcomma }}</td>
+                                    <td>{{ item.unit_price|floatformat:2|intcomma }}</td>
+                                    <td>{{ item.quantity|multiply:item.unit_price|floatformat:2|intcomma }}</td>
+                                    <td>{{ item.created_at|date:'Y-m-d H:i A' }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="6">No inventory items found.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="grand-total">
+                        Grand Total: UGX {{ total_cost|floatformat:2|intcomma }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

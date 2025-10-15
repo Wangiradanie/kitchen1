@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Add Ingredients to Recipe</h2>
+{% if messages %}
+    {% for message in messages %}
+        <p class="{{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+{% endif %}
+<form method="post" action="{% url 'add_recipe_ingredients' %}">
+    {% csrf_token %}
+    <label for="recipe_id">Select Recipe:</label>
+    <select name="recipe_id" id="recipe_id" required>
+        {% for recipe in recipes %}
+            <option value="{{ recipe.id }}">{{ recipe.name }}</option>
+        {% endfor %}
+    </select>
+    <h3>Ingredients</h3>
+    <div id="ingredients">
+        <div class="ingredient">
+            <select name="inventory_item[]" required>
+                {% for item in inventory_items %}
+                    <option value="{{ item.id }}">{{ item.name }} ({{ item.quantity }} {{ item.units }})</option>
+                {% endfor %}
+            </select>
+            <input type="number" name="quantity[]" step="0.01" placeholder="Quantity" required>
+            <input type="number" name="unit_price[]" step="0.01" placeholder="Unit Price" required>
+        </div>
+    </div>
+    <button type="button" onclick="addIngredient()">Add Another Ingredient</button>
+    <button type="submit">Save Ingredients</button>
+</form>
+<script>
+    function addIngredient() {
+        const container = document.getElementById('ingredients');
+        const newIngredient = container.firstElementChild.cloneNode(true);
+        container.appendChild(newIngredient);
+    }
+    const inventoryItems = {{ inventory_items | safe }};
+</script>
+{% endblock %}
