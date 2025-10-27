@@ -7,7 +7,18 @@ from decimal import Decimal
 
 class CustomUser(AbstractUser):
     is_manager = models.BooleanField(default=False)
-    is_approved = models.BooleanField(default=False)  # Added for approval system
+    is_approved = models.BooleanField(default=False)  # Admin approval required
+
+    def save(self,*args, **kwargs):
+# Ensure user is only active if approved
+       if not self.is_approved:
+          self.is_active = False
+       else:
+          self.is_active = True
+    
+       super().save(*args,**kwargs)
+
+
 
     def __str__(self):
         return self.username
