@@ -88,11 +88,19 @@
                             <td>
                                 <ul class="list-unstyled mb-0">
                                     {% for item in order.items.all %}
-                                    <li>{{ item.quantity }} × {{ item.menu_item.name }} (UGX {{ item.total_price|floatformat:2|intcomma }})</li>
+                                    <li>
+                                        <strong>{{ item.quantity }} × {{ item.menu_item.name }}</strong><br>
+                                        <small class="text-muted">
+                                            Category: {{ item.menu_item.category }}<br>
+                                            Unit Price: UGX {{ item.menu_item.price|floatformat:2|intcomma }}<br>
+                                            Total: UGX {{ item.total_price|floatformat:2|intcomma }}
+                                        </small>
+                                    </li>
+                                    {% if not forloop.last %}<hr class="my-2">{% endif %}
                                     {% endfor %}
                                 </ul>
                             </td>
-                            <td>{{ order.total_price|floatformat:2|intcomma }}</td>
+                            <td><strong>UGX {{ order.total_price|floatformat:2|intcomma }}</strong></td>
                             <td>{{ order.timestamp|date:'Y-m-d H:i A' }}</td>
                             <td>
                                 <form method="post" class="d-inline">
@@ -169,11 +177,19 @@
                             <td>
                                 <ul class="list-unstyled mb-0">
                                     {% for item in order.items.all %}
-                                    <li>{{ item.quantity }} × {{ item.menu_item.name }} (UGX {{ item.total_price|floatformat:2|intcomma }})</li>
+                                    <li>
+                                        <strong>{{ item.quantity }} × {{ item.menu_item.name }}</strong><br>
+                                        <small class="text-muted">
+                                            Category: {{ item.menu_item.category }}<br>
+                                            Unit Price: UGX {{ item.menu_item.price|floatformat:2|intcomma }}<br>
+                                            Total: UGX {{ item.total_price|floatformat:2|intcomma }}
+                                        </small>
+                                    </li>
+                                    {% if not forloop.last %}<hr class="my-2">{% endif %}
                                     {% endfor %}
                                 </ul>
                             </td>
-                            <td>{{ order.total_price|floatformat:2|intcomma }}</td>
+                            <td><strong>UGX {{ order.total_price|floatformat:2|intcomma }}</strong></td>
                             <td>{{ order.timestamp|date:'Y-m-d H:i A' }}</td>
                         </tr>
                         {% empty %}

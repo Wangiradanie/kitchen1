@@ -1,89 +1,51 @@
 {% extends 'base.html' %}
 {% load humanize %}
-{% block title %}Inventory History | Residence256 Hotel{% endblock %}
+{% block title %}Inventory History{% endblock %}
 {% block extra_head %}
 <style>
-    body {
-        background-color: #f4f4f9;
-        font-family: 'Arial', sans-serif;
-    }
-    .full-height {
-        min-height: calc(100vh - 120px);
-    }
-    .card {
-        border: 1px solid #dee2e6;
-        border-radius: 5px;
-    }
-    .table th, .table td {
-        font-size: 0.9rem;
-        text-align: center;
-        vertical-align: middle;
-    }
-    .table-container {
-        max-height: 50vh;
-        overflow-y: auto;
-    }
-    .form-label { font-weight: 500; }
+    body { background-color: #f4f4f9; }
+    .badge-added { background: #28a745; }
+    .badge-used { background: #dc3545; }
+    .badge-adjusted { background: #ffc107; color: #212529; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid full-height my-3">
+<div class="container-fluid my-4">
     <div class="card">
         <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">Inventory History</h5>
+            <h5>Inventory History (All Time)</h5>
         </div>
         <div class="card-body">
-            <form class="mb-3">
-                <div class="row">
+
+            <!-- Filters -->
+            <form method="get" class="mb-4">
+                <div class="row g-3">
                     <div class="col-md-3">
-                        <label for="start_date" class="form-label">Date</label>
-                        <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
+                        <input type="date" name="start_date" value="{{ start }}" class="form-control">
                     </div>
-                    <div class="col-md-2">
-                        <label for="period" class="form-label">Period</label>
-                        <select id="period" name="period" class="form-select">
-                            <option value="daily" {% if period == 'daily' %}selected{% endif %}>Daily</option>
-                            <option value="weekly" {% if period == 'weekly' %}selected{% endif %}>Weekly</option>
-                            <option value="monthly" {% if period == 'monthly' %}selected{% endif %}>Monthly</option>
+                    <div class="col-md-3">
+                        <input type="date" name="end_date" value="{{ end }}" class="form-control">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="item" class="form-control">
+                            <option value="">All Items</option>
+                            {% for i in items %}
+                            <option value="{{ i.id }}" {% if item_id == i.id|stringformat:"s" %}selected{% endif %}>{{ i.name }}</option>
+                            {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Filter</button>
+                        <a href="?export=csv" class="btn btn-success">CSV</a>
+                        <a href="?export=excel" class="btn btn-info">Excel</a>
                     </div>
                 </div>
             </form>
-            <div class="table-container">
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Item</th>
-                            <th>Units</th>
-                            <th>Quantity</th>
-                            <th>Unit Price (UGX)</th>
-                            <th>Order</th>
-                            <th>Menu Item</th>
-                            <th>Change Type</th>
-                            <th>Timestamp</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for record in history %}
-                        <tr>
-                            <td>{{ record.item.name }}</td>
-                            <td>{{ record.units|default:'-' }}</td>
-                            <td>{{ record.quantity }}</td>
-                            <td>{{ record.unit_price|floatformat:2|intcomma }}</td>
-                            <td>{{ record.order.order_number|default:'N/A' }}</td>
-                            <td>{{ record.menu_item.name|default:'N/A' }}</td>
-                            <td>{{ record.change_type }}</td>
-                            <td>{{ record.timestamp|date:'Y-m-d H:i A' }}</td>
-                        </tr>
-                        {% empty %}
-                        <tr><td colspan="8">No history found.</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+
+            <!-- Pandas Table -->
+            <div class="table-responsive">
+                {{ history_html|safe }}
             </div>
         </div>
     </div>

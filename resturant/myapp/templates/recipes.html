@@ -1,125 +1,69 @@
 {% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Recipes{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h2>Recipes</h2>
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    <!-- Recipe Form -->
-    <form method="POST" id="recipeForm">
-        {% csrf_token %}
-        <input type="hidden" name="add_recipe" value="1">
-        <div class="card mb-4">
-            <div class="card-header">Add New Recipe</div>
-            <div class="card-body">
-                {{ form.as_p }}
-                <h5>Ingredients</h5>
-                <div id="ingredient-list">
-                    <!-- Dynamic ingredient fields will be added here -->
+<div class="container my-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5>Recipes</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" class="mb-4">
+                {% csrf_token %}
+                <input type="hidden" name="add_recipe">
+                <div class="row g-3">
+                    <div class="col-md-3">{{ form.name }}</div>
+                    <div class="col-md-3">{{ form.category }}</div>
+                    <div class="col-md-2">{{ form.profit_percentage }}</div>
+                    <div class="col-md-2"><button type="button" onclick="addIngredient()" class="btn btn-sm btn-outline-primary">+ Ingredient</button></div>
+                    <div class="col-md-2"><button type="submit" class="btn btn-success">Save Recipe</button></div>
                 </div>
-                <button type="button" class="btn btn-secondary mt-2" onclick="addIngredient()">Add Ingredient</button>
-                <button type="submit" class="btn btn-primary mt-2">Save Recipe</button>
+                <div id="ingredients"></div>
+            </form>
+
+            <div class="row">
+                {% for r in recipes %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6>{{ r.name }} <span class="badge bg-info">{{ r.category }}</span></h6>
+                            <p><strong>Cost:</strong> {{ r.total_cost|floatformat:2|intcomma }}<br>
+                               <strong>Price:</strong> {{ r.selling_price|floatformat:2|intcomma }}</p>
+                            <ul>
+                                {% for ing in r.ingredients.all %}
+                                <li>{{ ing.quantity }} {{ ing.inventory_item.units }} {{ ing.inventory_item.name }} @ {{ ing.unit_price }}</li>
+                                {% endfor %}
+                            </ul>
+                            <form method="post" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="delete_recipe" value="{{ r.id }}">
+                                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
             </div>
         </div>
-    </form>
-
-    <!-- Date Filter -->
-    <form method="GET" class="mb-4">
-        <div class="row">
-            <div class="col-md-4">
-                <label for="start_date">Start Date:</label>
-                <input type="date" name="start_date" id="start_date" value="{{ start_date }}" class="form-control">
-            </div>
-            <div class="col-md-4">
-                <label for="period">Period:</label>
-                <select name="period" id="period" class="form-control">
-                    <option value="weekly" {% if period == 'weekly' %}selected{% endif %}>Weekly</option>
-                    <option value="monthly" {% if period == 'monthly' %}selected{% endif %}>Monthly</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <button type="submit" class="btn btn-info mt-4">Filter</button>
-            </div>
-        </div>
-    </form>
-
-    <!-- Recipes Table -->
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Ingredients</th>
-                <th>Total Cost (UGX)</th>
-                <th>Selling Price (UGX)</th>
-                <th>Created At</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for recipe in recipes %}
-                <tr>
-                    <td>{{ recipe.name }}</td>
-                    <td>{{ recipe.category }}</td>
-                    <td>
-                        {% for ingredient in recipe.ingredients.all %}
-                            {{ ingredient.inventory_item.name }}: {{ ingredient.quantity }} {{ ingredient.inventory_item.units }}{% if not forloop.last %}, {% endif %}
-                        {% empty %}
-                            No ingredients
-                        {% endfor %}
-                    </td>
-                    <td>{{ recipe.total_cost|floatformat:2 }}</td>
-                    <td>{{ recipe.selling_price|floatformat:2 }}</td>
-                    <td>{{ recipe.created_at|date:"Y-m-d H:i:s" }}</td>
-                    <td>
-                        <form method="POST" style="display:inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="recipe_id" value="{{ recipe.id }}">
-                            <input type="hidden" name="delete_recipe" value="1">
-                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                        </form>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr><td colspan="7">No recipes found.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    </div>
 </div>
 
 <script>
-    const inventoryItems = {{ inventory_items|safe }};
-
-    function addIngredient() {
-        const ingredientDiv = document.createElement('div');
-        ingredientDiv.className = 'ingredient-row mb-2';
-        ingredientDiv.innerHTML = `
-            <div class="row">
-                <div class="col-md-6">
-                    <select name="inventory_item[]" class="form-control">
-                        <option value="">Select Inventory Item</option>
-                        ${inventoryItems.map(item => `<option value="${item.id}">${item.name} (${item.quantity} ${item.units} available)</option>`).join('')}
-                    </select>
-                </div>
-                <div class="col-md-4">
-                    <input type="number" name="quantity[]" class="form-control" placeholder="Quantity" step="0.01" min="0.01">
-                </div>
-                <div class="col-md-2">
-                    <button type="button" class="btn btn-danger btn-sm" onclick="this.parentNode.parentNode.parentNode.remove()">Remove</button>
-                </div>
-            </div>
-        `;
-        document.getElementById('ingredient-list').appendChild(ingredientDiv);
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add one ingredient row by default
-        addIngredient();
-    });
+let items = {{ inventory_items|safe }};
+function addIngredient() {
+    let div = document.createElement('div');
+    div.className = 'row g-3 mt-2';
+    div.innerHTML = `
+        <div class="col-md-5">
+            <select name="inventory_item[]" class="form-control">
+                ${items.map(i => `<option value="${i.id}">${i.name} (${i.quantity} ${i.units})</option>`).join('')}
+            </select>
+        </div>
+        <div class="col-md-3"><input type="number" step="0.01" name="quantity[]" class="form-control" required></div>
+        <div class="col-md-2"><button type="button" onclick="this.parentElement.parentElement.remove()" class="btn btn-sm btn-danger">Remove</button></div>
+    `;
+    document.getElementById('ingredients').appendChild(div);
+}
 </script>
 {% endblock %}

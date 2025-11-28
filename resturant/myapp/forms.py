@@ -1,41 +1,47 @@
 from django import forms
-from .models import Recipe, Order, OrderItem, Requisition, InventoryItem, Table, MenuItem
+from .models import Recipe, Order, OrderItem, Requisition, InventoryItem, DTable, MenuItem,RequisitionItem 
 from decimal import Decimal
 
-class RequisitionForm(forms.ModelForm):
+# class RequisitionItemForm(forms.ModelForm):
+#     class Meta:
+#         model = RequisitionItem
+#         fields = ['item_name', 'units', 'quantity', 'unit_price']
+#         widgets = {
+#             'item_name': forms.TextInput(attrs={'class': 'form-control'}),
+#             'units': forms.TextInput(attrs={'class': 'form-control'}),
+#             'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+#             'unit_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+#         }
+
+class RequisitionItemForm(forms.ModelForm):
     class Meta:
-        model = Requisition
-        fields = ['item_name', 'units', 'quantity', 'unit_price', 'reason', 'comments']
+        model = RequisitionItem
+        fields = ['item_name', 'units', 'quantity', 'unit_price']
         widgets = {
-            'item_name': forms.TextInput(attrs={'placeholder': 'Enter item name', 'class': 'form-control', 'required': True}),
-            'units': forms.TextInput(attrs={'placeholder': 'Enter units (e.g., kg, liters)', 'class': 'form-control'}),
-            'quantity': forms.NumberInput(attrs={'min': '0.01', 'step': '0.01', 'placeholder': 'Enter quantity', 'class': 'form-control', 'required': True}),
-            'unit_price': forms.NumberInput(attrs={'min': '0.01', 'step': '0.01', 'placeholder': 'Enter unit price in UGX', 'class': 'form-control', 'required': True}),
-            'reason': forms.TextInput(attrs={'placeholder': 'Enter reason for purchase', 'class': 'form-control'}),
-            'comments': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Additional comments', 'class': 'form-control'}),
-        }
-        labels = {
-            'item_name': 'Item Name',
-            'units': 'Units',
-            'quantity': 'Quantity',
-            'unit_price': 'Unit Price (UGX)',
-            'reason': 'Reason for Purchase',
-            'comments': 'Comments',
-        }
-        help_texts = {
-            'unit_price': 'Enter the price per unit in UGX.',
+            'item_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'units': forms.TextInput(attrs={'class': 'form-control'}),
+            'quantity': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'unit_price': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
         }
 
     def clean(self):
-        cleaned_data = super().clean()
-        quantity = cleaned_data.get('quantity')
-        unit_price = cleaned_data.get('unit_price')
-        if quantity and unit_price:
-            cleaned_data['total_price'] = quantity * unit_price
-        else:
-            raise forms.ValidationError("Both quantity and unit price are required to calculate total price.")
-        print("Cleaned data:", cleaned_data)  # Debug
-        return cleaned_data
+        cleaned = super().clean()
+        qty = cleaned.get('quantity') or Decimal('0.00')
+        price = cleaned.get('unit_price') or Decimal('0.00')
+        if qty <= 0:
+            self.add_error('quantity', 'Quantity must be greater than zero.')
+        if price < 0:
+            self.add_error('unit_price', 'Unit price must be zero or positive.')
+        return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        qty = instance.quantity or Decimal('0.00')
+        price = instance.unit_price or Decimal('0.00')
+        instance.total_price = (qty * price).quantize(Decimal('0.01'))
+        if commit:
+            instance.save()
+        return instance
 
 class RecipeForm(forms.ModelForm):
     class Meta:

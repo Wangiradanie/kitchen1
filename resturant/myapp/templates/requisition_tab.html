@@ -1,0 +1,209 @@
+{% load humanize %}
+<div class="row">
+    {% for req in requisitions %}
+    <div class="col-md-6 mb-4">
+        <div class="card h-100 shadow-sm border">
+            <div class="card-header d-flex justify-content-between align-items-center bg-light border-bottom">
+                <strong class="text-dark fs-6">{{ req.requisition_number }}</strong>
+                <span class="badge bg-{{ status_badge }} text-white px-3 py-2 rounded-pill">{{ status_text }}</span>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>User:</strong> {{ req.user }}</p>
+                <p class="mb-1"><strong>Total:</strong> <span class="text-success fw-bold">UGX {{ req.total_price|floatformat:2|intcomma }}</span></p>
+                <p class="mb-2 text-muted"><small>Created: {{ req.created_at|date:"M d, Y H:i" }}</small></p>
+
+                <a href="{% url 'requisition_pdf' req.id %}" class="btn btn-sm btn-outline-danger w-100 mb-2" target="_blank">
+                    Download PDF
+                </a>
+
+                <button class="btn btn-sm btn-info w-100 mb-3" data-bs-toggle="collapse" data-bs-target="#details-{{ req.id }}">
+                    View Details ({{ req.items.count }})
+                </button>
+
+                <div class="collapse" id="details-{{ req.id }}">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered table-striped">
+                            <thead class="table-primary">
+                                <tr><th>Item</th><th>Qty</th><th>Price</th><th>Total</th></tr>
+                            </thead>
+                            <tbody>
+                                {% for i in req.items.all %}
+                                <tr>
+                                    <td>{{ i.item_name }}</td>
+                                    <td>{{ i.quantity }}</td>
+                                    <td>UGX {{ i.unit_price|intcomma }}</td>
+                                    <td class="fw-bold">UGX {{ i.total_price|intcomma }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4" class="text-center text-muted">No items</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- APPROVAL STATUS WITH NAMES & TIME -->
+                <hr class="my-3">
+                <h6 class="mb-2">Approval Status</h6>
+                <div class="row g-2 text-center">
+
+                    <!-- OPS MANAGER -->
+                    <div class="col-4">
+                        <small class="d-block text-muted">Ops Mgr</small>
+                        {% with ops_approval=None %}
+                            {% for h in req.history.all %}
+                                {% if h.field == 'operations_manager' and h.action == 'approve' and forloop.last %}
+                                    {% with ops_approval=h %}
+                                        <span class="badge bg-success w-100 py-1">
+                                            {{ h.user }}<br>
+                                            <small>{{ h.timestamp|date:"M d, H:i" }}</small>
+                                        </span>
+                                    {% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if not ops_approval and req.operations_manager_approval == 'Approved' %}
+                                <span class="badge bg-success w-100 py-1">Approved</span>
+                            {% elif req.operations_manager_approval == 'Rejected' %}
+                                {% with reject_h=None %}
+                                    {% for h in req.history.all %}
+                                        {% if h.field == 'operations_manager' and h.action == 'reject' and forloop.last %}
+                                            {% with reject_h=h %}
+                                                <span class="badge bg-danger w-100 py-1">
+                                                    {{ h.user }}<br>
+                                                    <small>{{ h.timestamp|date:"M d, H:i" }}</small>
+                                                </span>
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if not reject_h %}
+                                        <span class="badge bg-danger w-100 py-1">Rejected</span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                <span class="badge bg-warning text-dark w-100 py-1">Pending</span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <!-- FINANCE -->
+                    <div class="col-4">
+                        <small class="d-block text-muted">Finance</small>
+                        {% with fin_approval=None %}
+                            {% for h in req.history.all %}
+                                {% if h.field == 'finance' and h.action == 'approve' and forloop.last %}
+                                    {% with fin_approval=h %}
+                                        <span class="badge bg-success w-100 py-1">
+                                            {{ h.user }}<br>
+                                            <small>{{ h.timestamp|date:"M d, H:i" }}</small>
+                                        </span>
+                                    {% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if not fin_approval and req.finance_approval == 'Approved' %}
+                                <span class="badge bg-success w-100 py-1">Approved</span>
+                            {% elif req.finance_approval == 'Rejected' %}
+                                {% with reject_h=None %}
+                                    {% for h in req.history.all %}
+                                        {% if h.field == 'finance' and h.action == 'reject' and forloop.last %}
+                                            {% with reject_h=h %}
+                                                <span class="badge bg-danger w-100 py-1">
+                                                    {{ h.user }}<br>
+                                                    <small>{{ h.timestamp|date:"M d, H:i" }}</small>
+                                                </span>
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if not reject_h %}
+                                        <span class="badge bg-danger w-100 py-1">Rejected</span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                <span class="badge bg-warning text-dark w-100 py-1">Pending</span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+
+                    <!-- DIRECTOR -->
+                    <div class="col-4">
+                        <small class="d-block text-muted">Director</small>
+                        {% with dir_approval=None %}
+                            {% for h in req.history.all %}
+                                {% if h.field == 'director' and h.action == 'approve' and forloop.last %}
+                                    {% with dir_approval=h %}
+                                        <span class="badge bg-success w-100 py-1">
+                                            {{ h.user }}<br>
+                                            <small>{{ h.timestamp|date:"M d, H:i" }}</small>
+                                        </span>
+                                    {% endwith %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if not dir_approval and req.director_approval == 'Approved' %}
+                                <span class="badge bg-success w-100 py-1">Approved</span>
+                            {% elif req.director_approval == 'Rejected' %}
+                                {% with reject_h=None %}
+                                    {% for h in req.history.all %}
+                                        {% if h.field == 'director' and h.action == 'reject' and forloop.last %}
+                                            {% with reject_h=h %}
+                                                <span class="badge bg-danger w-100 py-1">
+                                                    {{ h.user }}<br>
+                                                    <small>{{ h.timestamp|date:"M d, H:i" }}</small>
+                                                </span>
+                                            {% endwith %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    {% if not reject_h %}
+                                        <span class="badge bg-danger w-100 py-1">Rejected</span>
+                                    {% endif %}
+                                {% endwith %}
+                            {% else %}
+                                <span class="badge bg-warning text-dark w-100 py-1">Pending</span>
+                            {% endif %}
+                        {% endwith %}
+                    </div>
+                </div>
+
+                <!-- APPROVAL BUTTONS -->
+                {% if status_text == 'Pending' %}
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+
+                    {% if req.operations_manager_approval == 'Pending' and request.user.role == 'operations_manager' %}
+                    <form method="post" action="{% url 'requisition_action' req.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="req_id" value="{{ req.id }}">
+                        <input type="hidden" name="field" value="operations_manager">
+                        <button name="action" value="approve" class="btn btn-success btn-sm">Approve</button>
+                        <button name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
+                    </form>
+                    {% endif %}
+
+                    {% if req.finance_approval == 'Pending' and request.user.role == 'finance' %}
+                    <form method="post" action="{% url 'requisition_action' req.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="req_id" value="{{ req.id }}">
+                        <input type="hidden" name="field" value="finance">
+                        <button name="action" value="approve" class="btn btn-success btn-sm">Approve</button>
+                        <button name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
+                    </form>
+                    {% endif %}
+
+                    {% if req.director_approval == 'Pending' and request.user.role == 'director' %}
+                    <form method="post" action="{% url 'requisition_action' req.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="req_id" value="{{ req.id }}">
+                        <input type="hidden" name="field" value="director">
+                        <button name="action" value="approve" class="btn btn-success btn-sm">Approve</button>
+                        <button name="action" value="reject" class="btn btn-danger btn-sm">Reject</button>
+                    </form>
+                    {% endif %}
+
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5 text-muted">
+        <p>No {{ status_text|lower }} requisitions.</p>
+    </div>
+    {% endfor %}
+</div>

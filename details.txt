@@ -8,3 +8,7 @@ breakfast should
 6.Change the netprofit to gross profit.
 7.Memory of previous recipes to simply the chefs work.
 8.Chapter data in reports.
+
+
+Input the receipts from the  recipes page once created it should just be picked from the pos page.
+The pos page should pick directly from the recipes.Breakfast should have individual items that can be  like menu items because dome times it has not recipe.

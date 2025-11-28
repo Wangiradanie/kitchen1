@@ -1,205 +1,204 @@
 {% extends 'base.html' %}
 {% load humanize %}
+
 {% block title %}Requisitions | Residence256 Hotel{% endblock %}
-{% block extra_head %}
+
+{% block extra_css %}
 <style>
-    body {
-        background-color: #f4f4f9;
-        font-family: 'Arial', sans-serif;
+    /* TABS - Professional & Visible */
+    .nav-tabs {
+        border-bottom: 2px solid #dee2e6;
+        margin-bottom: 1.5rem;
     }
-    .full-height {
-        min-height: calc(100vh - 120px);
+    .nav-tabs .nav-link {
+        color: #495057;
+        font-weight: 500;
+        font-size: 1rem;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 0;
+        position: relative;
     }
+    .nav-tabs .nav-link:hover {
+        color: #0d6efd;
+        border-bottom: 3px solid #0d6efd;
+    }
+    .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        font-weight: 600;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid #0d6efd;
+    }
+    .nav-tabs .nav-link .badge {
+        font-size: 0.75rem;
+    }
+
+    /* CARD & TABLE */
     .card {
         border: 1px solid #dee2e6;
-        border-radius: 5px;
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     }
-    .requisition-table th, .requisition-table td {
-        font-size: 0.9rem;
-        padding: 10px;
-        text-align: center;
-        vertical-align: middle;
+    .table {
+        font-size: 0.95rem;
+        margin-bottom: 0;
     }
-    .table-container {
-        max-height: 400px;
-        overflow-y: auto;
+    .table th {
+        background-color: #f8f9fa;
+        color: #212529;
+        font-weight: 600;
+        border-top: none;
     }
-    .status-pending { color: #ffc107; font-weight: bold; }
-    .status-approved { color: #28a745; font-weight: bold; }
-    .status-rejected { color: #dc3545; font-weight: bold; }
-    .form-label { font-weight: 500; }
-    .grand-total { font-size: 1.1rem; font-weight: bold; margin-top: 1rem; }
-    #total-price-display { font-weight: bold; color: #007bff; }
-    @media print {
-        .no-print { display: none !important; }
-        .card { border: none; box-shadow: none; }
-        .table-container { max-height: none; overflow-y: visible; }
+    .table tbody tr:hover {
+        background-color: #f1f3f5;
+    }
+    .table .fw-bold {
+        color: #212529;
+    }
+    .badge {
+        font-size: 0.8rem;
+    }
+    .collapse {
+        border-top: 1px solid #dee2e6;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
     }
 </style>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const quantityInput = document.getElementById('id_quantity');
-    const unitPriceInput = document.getElementById('id_unit_price');
-    const totalPriceDisplay = document.getElementById('total-price-display');
-
-    function updateTotalPrice() {
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const unitPrice = parseFloat(unitPriceInput.value) || 0;
-        const totalPrice = quantity * unitPrice;
-        totalPriceDisplay.textContent = `Total Price: UGX ${totalPrice.toFixed(2)}`;
-    }
-
-    quantityInput.addEventListener('input', updateTotalPrice);
-    unitPriceInput.addEventListener('input', updateTotalPrice);
-    updateTotalPrice(); // Initial calculation
-});
-</script>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid full-height my-3">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Item Requisitions</h5>
+<div class="container-fluid my-4">
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Requisitions</h5>
+        </div>
+        <div class="card-body">
+            {% comment %} <div class="mb-2">
+                <small class="text-muted">DEBUG: draft exists? {{ draft|yesno:"yes,no" }} — draft id: {{ draft.id|default:"-" }} — items: {{ draft_items|length }}</small>
+            </div> {% endcomment %}
+             <!-- messages: show form errors / success notices -->
+            {% if messages %}
+            <div class="mb-3">
+                {% for message in messages %}
+                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}">
+                    {{ message }}
                 </div>
-                <div class="card-body">
-                    <div class="mb-4 no-print">
-                        <button onclick="window.print()" class="btn btn-success mb-3">Print Requisition</button>
-                    </div>
-                    <h6 class="mb-3">Submit New Requisition</h6>
-                    <form method="post" id="requisition-form" class="no-print">
-                        {% csrf_token %}
-                        <div class="row mb-3">
-                            <div class="col-md-3">
-                                <label for="id_item_name" class="form-label">Item Name</label>
-                                {{ form.item_name }}
-                            </div>
-                            <div class="col-md-2">
-                                <label for="id_units" class="form-label">Units</label>
-                                {{ form.units }}
-                            </div>
-                            <div class="col-md-2">
-                                <label for="id_quantity" class="form-label">Quantity</label>
-                                {{ form.quantity }}
-                            </div>
-                            <div class="col-md-2">
-                                <label for="id_unit_price" class="form-label">Unit Price (UGX)</label>
-                                {{ form.unit_price }}
-                            </div>
-                            <div class="col-md-2">
-                                <label for="id_reason" class="form-label">Reason for Purchase</label>
-                                {{ form.reason }}
-                            </div>
-                            <div class="col-md-2">
-                                <label for="id_comments" class="form-label">Comments (Optional)</label>
-                                {{ form.comments }}
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-success w-100">Submit</button>
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <p id="total-price-display">Total Price: UGX 0.00</p>
-                        </div>
-                        {% if form.errors %}
-                        <div class="alert alert-danger">
-                            <ul>
-                                {% for field in form %}
-                                {% for error in field.errors %}
-                                <li>{{ field.label }}: {{ error }}</li>
-                                {% endfor %}
-                                {% endfor %}
-                                {% for error in form.non_field_errors %}
-                                <li>{{ error }}</li>
-                                {% endfor %}
-                            </ul>
-                        </div>
-                        {% endif %}
-                    </form>
+                {% endfor %}
+            </div>
+            {% endif %}
 
-                    <h6 class="mt-4 mb-3">Requisition History</h6>
-                    <form class="mb-3 no-print">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label for="start_date" class="form-label">Start Date</label>
-                                <input type="date" id="start_date" name="start_date" value="{{ start_date }}" class="form-control">
-                            </div>
-                            <div class="col-md-2 d-flex align-items-end">
-                                <button type="submit" class="btn btn-primary w-100">Filter</button>
-                            </div>
-                        </div>
-                    </form>
+            <!-- DRAFT SECTION -->
+            {% if draft %}
+            <div class="border p-4 rounded bg-light mb-5">
+                <h5 class="mb-3 text-primary">
+                    Draft Requisition: <strong>{{ draft.requisition_number }}</strong>
+                </h5>
 
-                    <div class="table-container">
-                        <table class="table table-bordered requisition-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>User</th>
-                                    <th>Item Name</th>
-                                    <th>Units</th>
-                                    <th>Quantity</th>
-                                    <th>Unit Price (UGX)</th>
-                                    <th>Total Price (UGX)</th>
-                                    <th>Reason</th>
-                                    <th>Comments</th>
-                                    <th>Admin Approval</th>
-                                    <th>Manager Approval</th>
-                                    <th>Director Approval</th>
-                                    <th>Created At</th>
-                                    {% if is_manager %}<th>Actions</th>{% endif %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for requisition in requisitions %}
-                                <tr>
-                                    <td>{{ requisition.id }}</td>
-                                    <td>{{ requisition.user.username }}</td>
-                                    <td>{{ requisition.item_name }}</td>
-                                    <td>{{ requisition.units|default:'-' }}</td>
-                                    <td>{{ requisition.quantity|floatformat:2 }}</td>
-                                    <td>{{ requisition.unit_price|floatformat:2|intcomma }}</td>
-                                    <td>{{ requisition.total_price|floatformat:2|intcomma }}</td>
-                                    <td>{{ requisition.reason|default:'-' }}</td>
-                                    <td>{{ requisition.comments|default:'-' }}</td>
-                                    <td class="status-{% if requisition.admin_approval == 'Pending' %}pending{% elif requisition.admin_approval == 'Approved' %}approved{% else %}rejected{% endif %}">
-                                        {{ requisition.admin_approval }}
-                                    </td>
-                                    <td class="status-{% if requisition.manager_approval == 'Pending' %}pending{% elif requisition.manager_approval == 'Approved' %}approved{% else %}rejected{% endif %}">
-                                        {{ requisition.manager_approval }}
-                                    </td>
-                                    <td class="status-{% if requisition.director_approval == 'Pending' %}pending{% elif requisition.director_approval == 'Approved' %}approved{% else %}rejected{% endif %}">
-                                        {{ requisition.director_approval }}
-                                    </td>
-                                    <td>{{ requisition.created_at|date:'Y-m-d H:i A' }}</td>
-                                    {% if is_manager %}
-                                    <td>
-                                        {% if requisition.admin_approval == 'Pending' or requisition.manager_approval == 'Pending' or requisition.director_approval == 'Pending' %}
-                                        <form method="post" action="{% url 'requisition_action' requisition.id %}" class="d-inline">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="action" value="approve">
-                                            <button type="submit" class="btn btn-sm btn-success">Approve</button>
-                                        </form>
-                                        <form method="post" action="{% url 'requisition_action' requisition.id %}" class="d-inline">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="action" value="reject">
-                                            <button type="submit" class="btn btn-sm btn-danger">Reject</button>
-                                        </form>
-                                        {% endif %}
-                                    </td>
-                                    {% endif %}
-                                </tr>
-                                {% empty %}
-                                <tr><td colspan="{% if is_manager %}14{% else %}13{% endif %}">No requisitions found.</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                <!-- ADD ITEM FORM -->
+                <form method="post" action="{% url 'requisition_add_item' %}" class="mb-3">
+                    {% csrf_token %}
+                    <input type="hidden" name="add-item">
+                    <div class="row g-3">
+                        <div class="col-md-3"><label class="form-label">Item</label>{{ form.item_name }}</div>
+                        <div class="col-md-2"><label class="form-label">Units</label>{{ form.units }}</div>
+                        <div class="col-md-2"><label class="form-label">Qty</label>{{ form.quantity }}</div>
+                        <div class="col-md-2"><label class="form-label">Price</label>{{ form.unit_price }}</div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Add Item</button>
+                        </div>
                     </div>
-                    <div class="grand-total">
-                        Grand Total: UGX {{ grand_total|floatformat:2|intcomma }}
+                </form>
+
+                <!-- DRAFT TABLE -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Item</th>
+                                <th>Units</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for i in draft_items %}
+                            <tr>
+                                <td>{{ i.item_name }}</td>
+                                <td>{{ i.units|default:"—" }}</td>
+                                <td>{{ i.quantity|floatformat:2 }}</td>
+                                <td>UGX {{ i.unit_price|floatformat:2|intcomma }}</td>
+                                <td class="fw-bold text-end">UGX {{ i.total_price|floatformat:2|intcomma }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="text-center text-muted">No items added yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="h5 text-end mt-3"><strong>Total: UGX {{ draft.total_price|floatformat:2|intcomma }}</strong></p>
+
+                <!-- SUBMIT BUTTON -->
+                <form method="post" action="{% url 'requisition_submit' %}" class="text-end">
+                    {% csrf_token %}
+                    {% comment %} <input type="hidden" name="submit" value="submit_for_approval"> {% endcomment %}
+                    <button type="submit" class="btn btn-success btn-lg px-5">Submit for Approval</button>
+                </form>
+            </div>
+            {% else %}
+            <!-- START NEW REQUISITION -->
+            <div class="border p-4 rounded bg-light mb-5">
+                <h5 class="mb-3 text-primary">Start New Requisition</h5>
+                <form method="post" action="{% url 'requisition_add_item' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="add-item">
+                    <div class="row g-3">
+                        <div class="col-md-3"><label class="form-label">Item</label>{{ form.item_name }}</div>
+                        <div class="col-md-2"><label class="form-label">Units</label>{{ form.units }}</div>
+                        <div class="col-md-2"><label class="form-label">Qty</label>{{ form.quantity }}</div>
+                        <div class="col-md-2"><label class="form-label">Price</label>{{ form.unit_price }}</div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary w-100">Add First Item</button>
+                        </div>
                     </div>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- TABS -->
+            <ul class="nav nav-tabs mb-4" id="requisition-tabs">
+                <li class="nav-item">
+                    <a class="nav-link active" data-bs-toggle="tab" href="#pending">
+                        Pending <span class="badge bg-warning text-dark ms-1">{{ pending_requisitions|length }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#approved">
+                        Approved <span class="badge bg-success ms-1">{{ approved_requisitions|length }}</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="tab" href="#rejected">
+                        Rejected <span class="badge bg-danger ms-1">{{ rejected_requisitions|length }}</span>
+                    </a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <!-- PENDING TAB -->
+                <div class="tab-pane fade show active" id="pending">
+                    {% include 'requisition_tab.html' with requisitions=pending_requisitions status_badge='warning' status_text='Pending' %}
+                </div>
+
+                <!-- APPROVED TAB -->
+                <div class="tab-pane fade" id="approved">
+                    {% include 'requisition_tab.html' with requisitions=approved_requisitions status_badge='success' status_text='Approved' %}
+                </div>
+
+                <!-- REJECTED TAB -->
+                <div class="tab-pane fade" id="rejected">
+                    {% include 'requisition_tab.html' with requisitions=rejected_requisitions status_badge='danger' status_text='Rejected' %}
                 </div>
             </div>
         </div>

@@ -135,6 +135,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#desserts" data-bs-toggle="tab">Desserts</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#break-fast" data-bs-toggle="tab">Break Fast</a>
+                    </li>
                 </ul>
                 <div class="tab-content">
                     <div class="tab-pane fade show active" id="starters">
@@ -175,6 +178,23 @@
                         <div class="row">
                             {% for item in menu_items %}
                             {% if item.category == 'Desserts' %}
+                            <div class="col-4 mb-3">
+                                <div class="menu-item" onclick="addToOrder('{{ item.name }}', {{ item.price|floatformat:2 }})">
+                                    <span>{{ item.name }}</span>
+                                    <br>
+                                    <span class="{% if item.price <= 0 %}zero-price{% endif %}">
+                                        UGX {{ item.price|floatformat:2|intcomma }}
+                                    </span>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="break-fast">
+                        <div class="row">
+                            {% for item in menu_items %}
+                            {% if item.category == 'Break Fast' %}
                             <div class="col-4 mb-3">
                                 <div class="menu-item" onclick="addToOrder('{{ item.name }}', {{ item.price|floatformat:2 }})">
                                     <span>{{ item.name }}</span>
@@ -240,7 +260,7 @@
                 <p>Please select a table or room to start the order.</p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondaryными" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>

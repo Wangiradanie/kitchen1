@@ -68,9 +68,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware',
+    #'allauth.account.middleware.AccountMiddleware',
 ]
 
 ROOT_URLCONF = 'mysite.urls'
@@ -157,5 +158,10 @@ ACCOUNT_ADAPTER = 'auth_app.adapters.CustomAccountAdapter'
 
 #ACCOUNT_SIGNUP_FORM_CLASS = 'auth_app.forms.StaffSignupForm'
 ACCOUNT_SIGNUP_FORM_CLASS = "auth_app.forms.StaffSignupForm"
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',  # Needed for admin login
+    'allauth.account.auth_backends.AuthenticationBackend',  # allauth login
+]
 
 
